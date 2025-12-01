@@ -1,0 +1,5 @@
+{
+  "name": "Circulatory System 3D",
+  "description": "A 3D interactive simulation of the human circulatory system demonstrating blood flow, oxygen exchange, and heart mechanics.",
+  "requestFramePermissions": []
+}
