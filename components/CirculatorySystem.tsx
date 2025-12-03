@@ -290,6 +290,12 @@ const CapillaryBed = ({ position, label, flowDirection = "systemic", flowSpeed =
     <group position={position}>
       <Text position={[0, 2.8, 0]} fontSize={0.325} color="#e2e8f0">{label}</Text>
       
+      {/* Capillaries label - top */}
+      <Text position={[0, BED_HEIGHT_HALF + 0.4, 0]} fontSize={0.26} color="#cbd5e1">Capillaries</Text>
+      
+      {/* Capillaries label - bottom */}
+      <Text position={[0, -BED_HEIGHT_HALF - 0.4, 0]} fontSize={0.26} color="#cbd5e1">Capillaries</Text>
+      
       {/* Left Main Tube Mesh */}
       <mesh>
          <tubeGeometry args={[leftVesselPath, 8, 0.15, 8, false]} />
