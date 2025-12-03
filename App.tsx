@@ -1,9 +1,36 @@
 import React, { useState, Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls, Stars, Environment } from '@react-three/drei';
+import { OrbitControls, Stars, Environment, useProgress, Html } from '@react-three/drei';
 import { Controls } from './components/Controls';
 import { CirculatorySystem } from './components/CirculatorySystem';
 import { SimulationSettings } from './types';
+
+// 3D 场景内的加载指示器
+const Loader = () => {
+  const { progress } = useProgress();
+  return (
+    <Html center>
+      <div className="flex flex-col items-center justify-center">
+        {/* 心跳动画 */}
+        <div className="relative w-20 h-20 mb-4">
+          <svg viewBox="0 0 100 100" className="w-full h-full animate-pulse">
+            <path
+              d="M50 88 C20 60, 10 40, 25 25 C35 15, 50 20, 50 35 C50 20, 65 15, 75 25 C90 40, 80 60, 50 88"
+              fill="#ef4444"
+              className="drop-shadow-lg"
+            />
+          </svg>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="w-16 h-16 border-4 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
+          </div>
+        </div>
+        <p className="text-white text-lg font-semibold mb-2">Loading 3D Model...</p>
+        <p className="text-slate-400 text-sm">{progress.toFixed(0)}% complete</p>
+        <p className="text-slate-500 text-xs mt-2">Initializing circulatory system</p>
+      </div>
+    </Html>
+  );
+};
 
 const App: React.FC = () => {
   const [settings, setSettings] = useState<SimulationSettings>({
@@ -43,7 +70,7 @@ const App: React.FC = () => {
         <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
         <Environment preset="city" />
 
-        <Suspense fallback={null}>
+        <Suspense fallback={<Loader />}>
           <CirculatorySystem settings={settings} />
         </Suspense>
 
