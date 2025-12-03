@@ -1,4 +1,4 @@
-import React, { useMemo, useRef } from 'react';
+import React, { useMemo, useRef, useState, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { CatmullRomCurve3, Vector3, Color, InstancedMesh, Object3D, Mesh, CanvasTexture, DoubleSide, CubicBezierCurve3 } from 'three';
 import { SimulationSettings } from '../types';
@@ -436,6 +436,20 @@ const VesselTube = ({ path, radius = 0.12, label, labelPos = 0.5, labelOffset = 
 };
 
 export const CirculatorySystem: React.FC<Props> = ({ settings }) => {
+  // 分阶段渲染状态
+  const [renderPhase, setRenderPhase] = useState(1);
+  
+  useEffect(() => {
+    // 阶段2：2秒后渲染毛细血管床和肺部
+    const timer1 = setTimeout(() => setRenderPhase(2), 2000);
+    // 阶段3：4秒后渲染血液粒子动画
+    const timer2 = setTimeout(() => setRenderPhase(3), 4000);
+    
+    return () => {
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+    };
+  }, []);
   
   const { paths, visualPaths } = useMemo(() => {
     // --- Internal Heart Paths ---
@@ -820,124 +834,95 @@ export const CirculatorySystem: React.FC<Props> = ({ settings }) => {
 
   return (
     <group>
+      {/* ===== 阶段1：心脏和主要血管（立即渲染） ===== */}
       {/* Heart Anatomy - Tightly Packed */}
-      {/* RA: Superior Right (Screen Left) */}
       <HeartChamber position={POS_RA} color="#2563eb" label="RA" bpm={settings.heartRate} phaseOffset={0.15} scale={[0.9, 0.9, 0.9]} />
-      
-      {/* LA: Superior Left (Screen Right) */}
       <HeartChamber position={POS_LA} color="#ef4444" label="LA" bpm={settings.heartRate} phaseOffset={0.15} scale={[0.8, 0.8, 0.8]} />
-      
-      {/* RV: Inferior Right (Screen Left), Angled to Apex */}
       <HeartChamber position={POS_RV} color="#1d4ed8" label="RV" bpm={settings.heartRate} phaseOffset={0} scale={[1.0, 1.4, 1.0]} rotation={[0, 0, -0.4]} />
-      
-      {/* LV: Inferior Left (Screen Right), Angled to Apex, Larger */}
       <HeartChamber position={POS_LV} color="#b91c1c" label="LV" bpm={settings.heartRate} phaseOffset={0} scale={[1.1, 1.6, 1.1]} rotation={[0, 0, 0.4]} />
-      
-      {/* Lungs */}
-      <LungShape position={LUNG_L_POS} label="Left Lung" isLeft={true} />
-      <LungShape position={LUNG_R_POS} label="Right Lung" isLeft={false} />
-      
-      {/* Capillary Beds */}
-      <CapillaryBed position={BODY_UPPER_POS} label="Upper Body" flowDirection="systemic" flowSpeed={settings.flowSpeed} />
-      <CapillaryBed position={BODY_LOWER_POS} label="Lower Body" flowDirection="systemic" flowSpeed={settings.flowSpeed} />
 
-      {/* Internal Heart Flow */}
-      <BloodFlow path={paths.pathRAtoRV} count={15} speed={settings.flowSpeed} radius={0.08} type="internal" overrideColor={COLOR_O2_POOR} />
-      <BloodFlow path={paths.pathLAtoLV} count={15} speed={settings.flowSpeed} radius={0.08} type="internal" overrideColor={COLOR_O2_RICH} />
-
-      {/* Pulmonary Arteries (Blue - deoxygenated blood to lungs) */}
-      <BloodFlow path={paths.pulmonaryArteryLeft} count={30} speed={settings.flowSpeed} overrideColor={COLOR_O2_POOR} />
-      <BloodFlow path={paths.pulmonaryArteryRight} count={30} speed={settings.flowSpeed} overrideColor={COLOR_O2_POOR} />
-      
-      {/* Pulmonary Veins (Red - oxygenated blood from lungs) */}
-      <BloodFlow path={paths.pulmonaryVeinLeftSup} count={20} speed={settings.flowSpeed} overrideColor={COLOR_O2_RICH} />
-      <BloodFlow path={paths.pulmonaryVeinLeftInf} count={20} speed={settings.flowSpeed} overrideColor={COLOR_O2_RICH} />
-      <BloodFlow path={paths.pulmonaryVeinRightSup} count={20} speed={settings.flowSpeed} overrideColor={COLOR_O2_RICH} />
-      <BloodFlow path={paths.pulmonaryVeinRightInf} count={20} speed={settings.flowSpeed} overrideColor={COLOR_O2_RICH} />
-      <BloodFlow path={paths.systemicUpperArtery} count={40} speed={settings.flowSpeed} type="systemic" overrideColor={COLOR_O2_RICH} />
-      <BloodFlow path={paths.systemicUpperVein} count={40} speed={settings.flowSpeed} type="systemic" overrideColor={COLOR_O2_POOR} />
-      <BloodFlow path={paths.systemicLowerArtery} count={40} speed={settings.flowSpeed} type="systemic" overrideColor={COLOR_O2_RICH} />
-      <BloodFlow path={paths.systemicLowerVein} count={40} speed={settings.flowSpeed} type="systemic" overrideColor={COLOR_O2_POOR} />
-
-      {/* Branch Arteries Blood Flow */}
-      <BloodFlow path={paths.brachiocephalicArtery} count={15} speed={settings.flowSpeed} overrideColor={COLOR_O2_RICH} />
-      <BloodFlow path={paths.leftCarotidArtery} count={15} speed={settings.flowSpeed} overrideColor={COLOR_O2_RICH} />
-      <BloodFlow path={paths.leftSubclavianArtery} count={15} speed={settings.flowSpeed} overrideColor={COLOR_O2_RICH} />
-      <BloodFlow path={paths.leftIliacArtery} count={15} speed={settings.flowSpeed} overrideColor={COLOR_O2_RICH} />
-      <BloodFlow path={paths.rightIliacArtery} count={15} speed={settings.flowSpeed} overrideColor={COLOR_O2_RICH} />
-
-      {/* Branch Veins Blood Flow */}
-      <BloodFlow path={paths.rightBrachiocephalicVein} count={15} speed={settings.flowSpeed} overrideColor={COLOR_O2_POOR} />
-      <BloodFlow path={paths.leftBrachiocephalicVein} count={15} speed={settings.flowSpeed} overrideColor={COLOR_O2_POOR} />
-      <BloodFlow path={paths.leftIliacVein} count={15} speed={settings.flowSpeed} overrideColor={COLOR_O2_POOR} />
-      <BloodFlow path={paths.rightIliacVein} count={15} speed={settings.flowSpeed} overrideColor={COLOR_O2_POOR} />
-
-      {/* Visual Vessels */}
+      {/* 主要血管（阶段1就显示） */}
       {settings.showVessels && (
         <>
-           {/* Pulmonary Arteries (Blue) */}
            <VesselTube path={visualPaths.pulmonaryTrunkVisual} label="Pulmonary Artery" labelPos={0.5} radius={0.2} color="#93c5fd" />
            <VesselTube path={paths.pulmonaryArteryLeft} radius={0.1} color="#93c5fd" /> 
            <VesselTube path={paths.pulmonaryArteryRight} radius={0.1} color="#93c5fd" />
-           
-           {/* Pulmonary Veins (Red - unique: veins carrying oxygenated blood) */}
            <VesselTube path={paths.pulmonaryVeinLeftSup} label="Pulmonary Veins" labelPos={0.5} radius={0.08} color="#fca5a5" />
            <VesselTube path={paths.pulmonaryVeinLeftInf} radius={0.08} color="#fca5a5" />
            <VesselTube path={paths.pulmonaryVeinRightSup} radius={0.08} color="#fca5a5" />
            <VesselTube path={paths.pulmonaryVeinRightInf} radius={0.08} color="#fca5a5" /> 
-           
-           {/* Systemic Upper Visuals */}
            <VesselTube path={visualPaths.systemicUpperArteryVisual} label="Aorta" labelPos={0.2} radius={0.22} color="#fca5a5" />
            <VesselTube path={visualPaths.systemicUpperVeinVisual} label="Sup. Vena Cava" labelPos={0.8} radius={0.2} color="#93c5fd" />
-
-           {/* Systemic Lower Visuals */}
            <VesselTube path={visualPaths.systemicLowerArteryVisual} label="Descending Aorta" labelPos={0.3} radius={0.2} color="#fca5a5" />
            <VesselTube path={visualPaths.systemicLowerVeinVisual} label="Inferior Vena Cava" labelPos={0.4} labelOffset={0.5} radius={0.25} color="#93c5fd" />
+        </>
+      )}
 
-           {/* Branch Arteries (Red - oxygenated blood) */}
-           <VesselTube path={paths.brachiocephalicArtery} radius={0.1} color="#fca5a5" />
-           <VesselTube path={paths.leftCarotidArtery} label="Carotid Artery" labelPos={0.6} radius={0.08} color="#fca5a5" />
-           <VesselTube path={paths.leftSubclavianArtery} radius={0.08} color="#fca5a5" />
-           <VesselTube path={paths.leftIliacArtery} label="Iliac Artery" labelPos={0.5} radius={0.1} color="#fca5a5" />
-           <VesselTube path={paths.rightIliacArtery} radius={0.1} color="#fca5a5" />
+      {/* ===== 阶段2：肺部、毛细血管床、分支血管（2秒后渲染） ===== */}
+      {renderPhase >= 2 && (
+        <>
+          {/* Lungs */}
+          <LungShape position={LUNG_L_POS} label="Left Lung" isLeft={true} />
+          <LungShape position={LUNG_R_POS} label="Right Lung" isLeft={false} />
+          
+          {/* Capillary Beds */}
+          <CapillaryBed position={BODY_UPPER_POS} label="Upper Body" flowDirection="systemic" flowSpeed={settings.flowSpeed} />
+          <CapillaryBed position={BODY_LOWER_POS} label="Lower Body" flowDirection="systemic" flowSpeed={settings.flowSpeed} />
 
-           {/* Branch Veins (Blue - deoxygenated blood) */}
-           <VesselTube path={paths.rightBrachiocephalicVein} radius={0.08} color="#93c5fd" />
-           <VesselTube path={paths.leftBrachiocephalicVein} label="Brachiocephalic Vein" labelPos={0.3} radius={0.08} color="#93c5fd" />
-           <VesselTube path={paths.leftIliacVein} label="Iliac Vein" labelPos={0.5} radius={0.1} color="#93c5fd" />
-           <VesselTube path={paths.rightIliacVein} radius={0.1} color="#93c5fd" />
+          {/* Branch Vessels */}
+          {settings.showVessels && (
+            <>
+               <VesselTube path={paths.brachiocephalicArtery} radius={0.1} color="#fca5a5" />
+               <VesselTube path={paths.leftCarotidArtery} label="Carotid Artery" labelPos={0.6} radius={0.08} color="#fca5a5" />
+               <VesselTube path={paths.leftSubclavianArtery} radius={0.08} color="#fca5a5" />
+               <VesselTube path={paths.leftIliacArtery} label="Iliac Artery" labelPos={0.5} radius={0.1} color="#fca5a5" />
+               <VesselTube path={paths.rightIliacArtery} radius={0.1} color="#fca5a5" />
+               <VesselTube path={paths.rightBrachiocephalicVein} radius={0.08} color="#93c5fd" />
+               <VesselTube path={paths.leftBrachiocephalicVein} label="Brachiocephalic Vein" labelPos={0.3} radius={0.08} color="#93c5fd" />
+               <VesselTube path={paths.leftIliacVein} label="Iliac Vein" labelPos={0.5} radius={0.1} color="#93c5fd" />
+               <VesselTube path={paths.rightIliacVein} radius={0.1} color="#93c5fd" />
 
-           {/* Arterioles (Red - oxygenated blood, fan out to capillary beds) */}
-           <MicrovesselGroup 
-             paths={paths.upperArterioles} 
-             color="#fca5a5" 
-             label="Arterioles" 
-             flowSpeed={settings.flowSpeed}
-             labelPos={0.5}
-           />
-           <MicrovesselGroup 
-             paths={paths.lowerArterioles} 
-             color="#fca5a5" 
-             label="" 
-             flowSpeed={settings.flowSpeed}
-             labelPos={0.5}
-           />
+               {/* Arterioles & Venules */}
+               <MicrovesselGroup paths={paths.upperArterioles} color="#fca5a5" label="Arterioles" flowSpeed={settings.flowSpeed} labelPos={0.5} />
+               <MicrovesselGroup paths={paths.lowerArterioles} color="#fca5a5" label="" flowSpeed={settings.flowSpeed} labelPos={0.5} />
+               <MicrovesselGroup paths={paths.upperVenules} color="#93c5fd" label="Venules" flowSpeed={settings.flowSpeed} labelPos={0.5} />
+               <MicrovesselGroup paths={paths.lowerVenules} color="#93c5fd" label="" flowSpeed={settings.flowSpeed} labelPos={0.5} />
+            </>
+          )}
+        </>
+      )}
 
-           {/* Venules (Blue - deoxygenated blood, converge from capillary beds) */}
-           <MicrovesselGroup 
-             paths={paths.upperVenules} 
-             color="#93c5fd" 
-             label="Venules" 
-             flowSpeed={settings.flowSpeed}
-             labelPos={0.5}
-           />
-           <MicrovesselGroup 
-             paths={paths.lowerVenules} 
-             color="#93c5fd" 
-             label="" 
-             flowSpeed={settings.flowSpeed}
-             labelPos={0.5}
-           />
+      {/* ===== 阶段3：血液粒子动画（4秒后渲染） ===== */}
+      {renderPhase >= 3 && (
+        <>
+          {/* Internal Heart Flow */}
+          <BloodFlow path={paths.pathRAtoRV} count={15} speed={settings.flowSpeed} radius={0.08} type="internal" overrideColor={COLOR_O2_POOR} />
+          <BloodFlow path={paths.pathLAtoLV} count={15} speed={settings.flowSpeed} radius={0.08} type="internal" overrideColor={COLOR_O2_RICH} />
+
+          {/* Pulmonary Blood Flow */}
+          <BloodFlow path={paths.pulmonaryArteryLeft} count={30} speed={settings.flowSpeed} overrideColor={COLOR_O2_POOR} />
+          <BloodFlow path={paths.pulmonaryArteryRight} count={30} speed={settings.flowSpeed} overrideColor={COLOR_O2_POOR} />
+          <BloodFlow path={paths.pulmonaryVeinLeftSup} count={20} speed={settings.flowSpeed} overrideColor={COLOR_O2_RICH} />
+          <BloodFlow path={paths.pulmonaryVeinLeftInf} count={20} speed={settings.flowSpeed} overrideColor={COLOR_O2_RICH} />
+          <BloodFlow path={paths.pulmonaryVeinRightSup} count={20} speed={settings.flowSpeed} overrideColor={COLOR_O2_RICH} />
+          <BloodFlow path={paths.pulmonaryVeinRightInf} count={20} speed={settings.flowSpeed} overrideColor={COLOR_O2_RICH} />
+
+          {/* Systemic Blood Flow */}
+          <BloodFlow path={paths.systemicUpperArtery} count={40} speed={settings.flowSpeed} type="systemic" overrideColor={COLOR_O2_RICH} />
+          <BloodFlow path={paths.systemicUpperVein} count={40} speed={settings.flowSpeed} type="systemic" overrideColor={COLOR_O2_POOR} />
+          <BloodFlow path={paths.systemicLowerArtery} count={40} speed={settings.flowSpeed} type="systemic" overrideColor={COLOR_O2_RICH} />
+          <BloodFlow path={paths.systemicLowerVein} count={40} speed={settings.flowSpeed} type="systemic" overrideColor={COLOR_O2_POOR} />
+
+          {/* Branch Blood Flow */}
+          <BloodFlow path={paths.brachiocephalicArtery} count={15} speed={settings.flowSpeed} overrideColor={COLOR_O2_RICH} />
+          <BloodFlow path={paths.leftCarotidArtery} count={15} speed={settings.flowSpeed} overrideColor={COLOR_O2_RICH} />
+          <BloodFlow path={paths.leftSubclavianArtery} count={15} speed={settings.flowSpeed} overrideColor={COLOR_O2_RICH} />
+          <BloodFlow path={paths.leftIliacArtery} count={15} speed={settings.flowSpeed} overrideColor={COLOR_O2_RICH} />
+          <BloodFlow path={paths.rightIliacArtery} count={15} speed={settings.flowSpeed} overrideColor={COLOR_O2_RICH} />
+          <BloodFlow path={paths.rightBrachiocephalicVein} count={15} speed={settings.flowSpeed} overrideColor={COLOR_O2_POOR} />
+          <BloodFlow path={paths.leftBrachiocephalicVein} count={15} speed={settings.flowSpeed} overrideColor={COLOR_O2_POOR} />
+          <BloodFlow path={paths.leftIliacVein} count={15} speed={settings.flowSpeed} overrideColor={COLOR_O2_POOR} />
+          <BloodFlow path={paths.rightIliacVein} count={15} speed={settings.flowSpeed} overrideColor={COLOR_O2_POOR} />
         </>
       )}
     </group>
