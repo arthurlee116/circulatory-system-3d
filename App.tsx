@@ -1,6 +1,6 @@
 import React, { useState, Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls, Stars, Environment, useProgress, Html } from '@react-three/drei';
+import { OrbitControls, Stars, useProgress, Html } from '@react-three/drei';
 import { Controls } from './components/Controls';
 import { CirculatorySystem } from './components/CirculatorySystem';
 import { SimulationSettings } from './types';
@@ -67,8 +67,7 @@ const App: React.FC = () => {
         <pointLight position={[-10, -10, -5]} intensity={0.5} color="#b0c4de" />
         
         {/* Scene Environment */}
-        <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
-        <Environment preset="city" />
+        <Stars radius={100} depth={50} count={2000} factor={4} saturation={0} fade speed={1} />
 
         <Suspense fallback={<Loader />}>
           <CirculatorySystem settings={settings} />
